@@ -1,7 +1,10 @@
+import 'reflect-metadata';
 import express from 'express';
 import next from 'next';
-
-import * as path from 'path'; 
+import { ApolloServer } from 'apollo-server-express';
+import { buildSchemaSync } from 'type-graphql';
+import { createConnection } from 'typeorm';
+import { RegisterResolver } from './modules/user/Register';
 
 const dev = process.env.NODE_ENV !== 'production';
 const port: number = parseInt(<string>process.env.PORT, 10) || 3000;
@@ -13,7 +16,19 @@ const handle = app.getRequestHandler();
 
 app.prepare()
   .then(() => {
+    createConnection().then(conntection => {
+      console.log(conntection);
+    })
+
+    const schema = buildSchemaSync({
+      resolvers: [RegisterResolver]
+    });
+
+    const apolloServer = new ApolloServer({ schema });
+
     const server = express();
+
+    apolloServer.applyMiddleware({ app: server });
 
     server.get('*', (req, res) => {
       return handle(req, res);
